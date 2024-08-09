@@ -1,0 +1,105 @@
+<?php
+
+namespace App\Livewire\Admin;
+
+use Livewire\Component;
+use Livewire\WithPagination;
+
+class Purchases extends Component
+{
+    use WithPagination;
+    public $search, $limit = 10, $edit_id, $delete_id;
+    public $name;
+    public $model = 'App\Models\Purchase';
+    
+    protected $listeners = [
+        'remove',
+    ];
+
+    public function render()
+    {
+        $datas = $this->model::latest()->when($this->search, function ($query) {
+                $query->where('payment_id', 'like', '%' . $this->search . '%');
+        })->paginate($this->limit);
+        return view('livewire.admin.purchases', compact('datas'));
+    }
+
+    public function resetForm()
+    {
+        $this->reset();
+        $this->dispatchBrowserEvent('pondReset');
+        $this->emit('openModal');       
+    }
+    
+    public function edit($id)
+    {
+        $this->resetForm();
+        $this->edit_id = $id;
+        $data = $this->model::find($id);
+        $this->name = $data->name;
+        $this->dispatchBrowserEvent('pondReset');
+        $this->emit('openModal');         
+    }
+    
+    public function delete($id)
+    {
+        $this->delete_id = $id;
+        $this->dispatchBrowserEvent('modal:confirm', [
+            'title' => 'Are you sure?',
+            'message' => 'You are about to delete this item. This action cannot be undone. Do you want to proceed?',
+        ]);      
+    }
+    
+    public function remove()
+    {
+        $data = $this->model::find($this->delete_id);
+        $data->delete();
+        $this->dispatchBrowserEvent('notify:modal', [
+            'title' => 'Success Message',
+            'message' => 'Data Deleted Successfully. '
+        ]);
+    }
+    
+     public function changeStatus($id, $column)
+    {
+        $this->model::find($id)->update([
+            $column => !$this->model::find($id)->$column
+        ]);
+        $this->dispatchBrowserEvent('notify:modal', [
+            'title' => 'Success Message',
+            'message' => 'Updated Successfully. '
+        ]);
+    }
+    
+    public function updateOrCreate()
+    {
+        
+        $this->validate([
+            'name' => 'required',
+        ]);
+        
+        if ($this->edit_id) {
+            $data = $this->model::find($this->edit_id);
+            $data->update([
+                'name' => $this->name,
+            ]);
+            $this->dispatchBrowserEvent('notify:modal', [
+                'title' => 'Success Message',
+                'message' => 'Data Update/Create Successfully. '
+            ]);
+            return;
+            
+        } 
+        
+        $this->model::create([
+            'name' => $this->name,
+        ]);
+        $this->resetForm();
+        $this->emit('closeModal');
+        $this->dispatchBrowserEvent('notify:modal', [
+            'title' => 'Success Message',
+            'message' => 'Data Update/Create Successfully. '
+        ]);
+        
+    }
+}

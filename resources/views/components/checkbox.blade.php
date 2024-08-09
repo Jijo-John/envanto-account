@@ -1,0 +1,1 @@
+<input type="checkbox" {!! $attributes->merge(['class' => 'form-checkbox is-basic h-5 w-5 rounded border-slate-400/70 checked:border-primary checked:bg-primary hover:border-primary focus:border-primary dark:border-navy-400 dark:checked:border-accent dark:checked:bg-accent dark:hover:border-accent dark:focus:border-accent']) !!}>
